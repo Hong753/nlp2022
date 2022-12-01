@@ -10,5 +10,5 @@ conda create -n nlp python=3.8 -y
 conda activate nlp
 conda install spyder jupyter -y # optional
 pip3 install torch==1.10 torchvision --extra-index-url https://download.pytorch.org/whl/cu113
-conda install nltk pandas
+conda install nltk pandas yacs
 ```
