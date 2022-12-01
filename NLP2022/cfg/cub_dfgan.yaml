@@ -1,0 +1,22 @@
+DATA:
+    dataset_name: "CUB_200_2011"
+    data_dir: "/home/hong/datasets"
+    img_size: 128 # can change to lower resolution (must be 2 ** int)
+    img_channels: 3
+    
+METRICS:
+    eval_backbone: "InceptionV3_tf"
+    ref_dataset: "test"
+
+MODEL:
+    z_dim: 100
+    c_dim: 256
+    channel_base: 32
+
+TRAINING:
+    device: 0
+    batch_size: 64
+    num_workers: 4
+    G_lr: 0.0001
+    D_lr: 0.0004
+    num_epochs: 1000
