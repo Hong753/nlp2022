@@ -8,7 +8,7 @@ def prepare_folders():
         if name in ["moments"]:
             continue
         for data in ["CUB_200_2011"]:
-            for model in ["dfgan"]:
+            for model in ["dfgan", "dfgan_attr"]:
                 os.makedirs(os.path.join("./runs", name, "{}_{}".format(data, model)), exist_ok=True)
 
 class MetricLogger():
