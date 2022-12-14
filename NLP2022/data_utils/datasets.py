@@ -37,11 +37,11 @@ class CUBDataset(Dataset):
         # Load captions for train/test data
         self.captions = self.load_captions(filenames=self.filenames, split=split)
         
+        # Load attributes
+        self.attributes = self.load_attributes(filenames=self.filenames, split=split)
+        
         # Construct mapping dictionary
         self.captions_id, self.id2word, self.word2id = self.construct_vocabulary(split=split)
-        
-        # Load attributes
-        self.attributes = self.load_attributes(split=split)
     
     def load_bbox(self):
         # Get bounding boxes
@@ -109,14 +109,14 @@ class CUBDataset(Dataset):
                 if count < self.num_captions:
                     print("The number of captions for {} is {} < 10.".format(filenames[idx], count))                    
         return all_captions
-
-    def load_attributes(self, split="train"):
+    
+    def load_attributes(self, filenames, split="train"):
         assert split in ["train", "test"]
-        file_path = os.path.join(self.data_path, split, "attributes_dict.pkl")
-        assert os.path.exists(file_path), "Check for 'attributes_dict.pkl' in {}".format(os.path.join(self.data_path, split))
+        file_path = os.path.join(self.data_path, split, "attributes.pkl")
+        assert os.path.exists(file_path), "Check for 'attributes.pkl' in {}".format(os.path.join(self.data_path, split))
         with open(file_path, "rb") as f:
-            dictionary = pickle.load(f, encoding="latin1")
-        return dictionary
+            attributes = pickle.load(f, encoding="latin1")
+        return attributes
     
     def construct_vocabulary(self, split="train"):
         assert split in ["train", "test"]
@@ -138,13 +138,13 @@ class CUBDataset(Dataset):
         image = self._preprocess_image(image_path=image_path, bbox=bbox, transforms=self.transforms)
         caption_idx = idx * self.num_captions + random.randint(0, self.num_captions - 1)
         caption, caption_length = self._get_caption(caption_idx)
-        attributes = self.attributes[idx]["attributes"]
-        attributes_txt = self.attributes[idx]["attributes_txt"]
+        attributes = np.zeros((312, ))
+        for attr_idx in self.attributes[idx]["attributes"]:
+            attributes[attr_idx - 1] = 1
         return {"images": image, 
                 "captions": caption, 
-                "caption_lengths": caption_length,
-                "attributes": attributes,
-                "attributes_txt": attributes_txt}
+                "caption_lengths": caption_length, 
+                "attributes": attributes}
     
     def __len__(self):
         return len(self.filenames)
@@ -180,3 +180,7 @@ class CUBDataset(Dataset):
             out[:] = caption[idx]
             caption_length = self.num_words
         return out, caption_length
+
+if __name__ == "__main__":
+    data_path = "/home/hong/datasets/CUB_200_2011"
+    dataset = CUBDataset(data_path, num_captions=10, num_words=18, img_resolution=256, split="train")
