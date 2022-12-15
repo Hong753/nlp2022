@@ -132,7 +132,7 @@ class CUBDataset(Dataset):
     
     def __getitem__(self, idx):
         filename = self.filenames[idx]
-        # class_id = self.class_id[idx]
+        class_id = self.class_ids[idx]
         bbox = self.bbox[filename]
         image_path = os.path.join(self.data_path, "images", f"{filename}.jpg")
         image = self._preprocess_image(image_path=image_path, bbox=bbox, transforms=self.transforms)
@@ -144,7 +144,9 @@ class CUBDataset(Dataset):
         return {"images": image, 
                 "captions": caption, 
                 "caption_lengths": caption_length, 
-                "attributes": attributes}
+                "attributes": attributes,
+                "class_ids": class_id
+                }
     
     def __len__(self):
         return len(self.filenames)
@@ -182,5 +184,7 @@ class CUBDataset(Dataset):
         return out, caption_length
 
 if __name__ == "__main__":
-    data_path = "/home/hong/datasets/CUB_200_2011"
+    data_path = "./data/CUB_200_2011"
     dataset = CUBDataset(data_path, num_captions=10, num_words=18, img_resolution=256, split="train")
+    print(dataset[0])
+    print(dataset[343])

@@ -12,7 +12,8 @@ from metrics.preparation import LoadEvalModel, prepare_moments
 from metrics.fid import frechet_inception_distance
 from models.damsm import RNN_ENCODER
 from models.dfgan import Generator, Discriminator, CondEpilogue, DFGAN
-from utils import prepare_folders, MetricLogger
+from NLP2022.utils.utils import prepare_folders, MetricLogger
+import wandb
 
 def get_fixed_data(train_dataset, test_dataset, batch_size, device):
     pass
@@ -142,6 +143,7 @@ def run(cfg):
             G_opt.step()
             logger.g_loss.update(G_loss.item(), batch_size)
         
+        log_image = {}
         # Save images
         if (epoch + 1) % 1 == 0:
             model.G.eval().requires_grad_(False)
@@ -151,6 +153,7 @@ def run(cfg):
                 gen_images = ((gen_images + 1) / 2).clamp(0.0, 1.0)
                 save_path = "./runs/images/{}_dfgan/gen_images_{}.png".format(cfg.DATA.dataset_name, epoch + 1)
                 save_image(gen_images, save_path, padding=0, nrow=8)
+                log_image["example"] = wandb.Image(save_path)
         
         # Evaluation (FID on test data)
         if (epoch + 1) % 10 == 0:
@@ -191,10 +194,11 @@ def run(cfg):
             print("Epoch [{}/{}]".format(epoch + 1, num_epochs), end="\t")
             print("fid: {:.2f}".format(fid_score), end="\t")
             print("best fid: {:.2f}".format(best_fid_score))
-            logger.print_progress()
+            logger.print_progress(log_image)
             logger.reset()
 
 if __name__ == "__main__":
+    wandb.init(project="nlp2022", name="train_base", entity="janice9902")
     cfg = get_default_config()
     cfg.merge_from_file("./cfg/cub_dfgan.yaml")
     

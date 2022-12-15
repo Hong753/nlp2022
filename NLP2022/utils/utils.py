@@ -1,5 +1,6 @@
 import os
 import time
+import wandb
 
 def prepare_folders():
     os.makedirs("./runs", exist_ok=True)
@@ -8,7 +9,7 @@ def prepare_folders():
         if name in ["moments"]:
             continue
         for data in ["CUB_200_2011"]:
-            for model in ["dfgan", "dfgan_attr"]:
+            for model in ["dfgan", "dfgan_attr", "dfgan_attr_test"]:
                 os.makedirs(os.path.join("./runs", name, "{}_{}".format(data, model)), exist_ok=True)
 
 class MetricLogger():
@@ -23,9 +24,14 @@ class MetricLogger():
         for metric in self.metric_list:
             getattr(self, metric).reset()
 
-    def print_progress(self):
+    def print_progress(self, log_image=None, fid_score=None):
+        info = {}
         for metric in self.metric_list:
             print("{}: {:.4f}".format(metric, getattr(self, metric).avg), end="\t")
+            info[metric] = getattr(self, metric).avg
+        info.update(log_image)
+        info.update({"fid": fid_score})
+        wandb.log(info)
         time_taken = time.time() - self.start_time
         print("{:.2f} mins".format(time_taken / 60))
 

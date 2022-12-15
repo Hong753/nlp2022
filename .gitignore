@@ -1,0 +1,8 @@
+__pycache__
+*/__pycache__
+NLP2022/data
+NLP2022/cfg
+NLP2022/runs
+NLP2022/result_images
+wandb
+.vscode

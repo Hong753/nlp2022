@@ -11,7 +11,8 @@ from data_utils.datasets import CUBDataset
 from metrics.preparation import LoadEvalModel, prepare_moments
 from metrics.fid import frechet_inception_distance
 from models.dfgan_attr import Generator, Discriminator, CondEpilogue, DFGAN
-from utils import prepare_folders, MetricLogger
+from NLP2022.utils.utils import prepare_folders, MetricLogger
+import wandb
 
 def get_fixed_data(train_dataset, test_dataset, batch_size, device):
     pass
@@ -65,7 +66,8 @@ def run(cfg):
     img_channels = cfg.DATA.img_channels
     channel_base = cfg.MODEL.channel_base
     
-    generator = Generator(z_dim, c_dim, img_resolution, img_channels, channel_base, num_attributes=312)
+    # generator = Generator(z_dim, c_dim, img_resolution, img_channels, channel_base, num_attributes=312)
+    generator = Generator(z_dim, 312, img_resolution, img_channels, channel_base, num_attributes=312)
     generator = generator.train().requires_grad_(False).to(device)
     
     discriminator = Discriminator(img_resolution, img_channels, channel_base)
@@ -128,6 +130,7 @@ def run(cfg):
             G_opt.step()
             logger.g_loss.update(G_loss.item(), batch_size)
         
+        log_image = {}
         # Save images
         if (epoch + 1) % 1 == 0:
             model.G.eval().requires_grad_(False)
@@ -135,8 +138,9 @@ def run(cfg):
                 gen_z = model._sample_inputs(batch_size=cfg.TRAINING.batch_size, device=device)
                 gen_images = model.G(gen_z, c).cpu()[:64]
                 gen_images = ((gen_images + 1) / 2).clamp(0.0, 1.0)
-                save_path = "./runs/images/{}_dfgan_attr/gen_images_{}.png".format(cfg.DATA.dataset_name, epoch + 1)
+                save_path = "./runs/images/{}_dfgan_attr_test/gen_images_{}.png".format(cfg.DATA.dataset_name, epoch + 1)
                 save_image(gen_images, save_path, padding=0, nrow=8)
+                log_image["example"] = wandb.Image(save_path)
         
         # Evaluation (FID on test data)
         if (epoch + 1) % 10 == 0:
@@ -162,12 +166,12 @@ def run(cfg):
                           "G_state_dict": model.G.state_dict(), 
                           "D_state_dict": model.D.state_dict(), 
                           "C_state_dict": model.C.state_dict()}
-            save_path = "./runs/checkpoints/{}_dfgan_attr/current_weights.pth".format(cfg.DATA.dataset_name)
+            save_path = "./runs/checkpoints/{}_dfgan_attr_test/current_weights.pth".format(cfg.DATA.dataset_name)
             torch.save(checkpoint, save_path)
             if fid_score < best_fid_score:
                 best_fid_score = fid_score
                 best_checkpoint = checkpoint
-                save_path = "./runs/checkpoints/{}_dfgan_attr/best_weights.pth".format(cfg.DATA.dataset_name)
+                save_path = "./runs/checkpoints/{}_dfgan_attr_test/best_weights.pth".format(cfg.DATA.dataset_name)
                 torch.save(best_checkpoint, save_path)
         
         # Log
@@ -175,10 +179,11 @@ def run(cfg):
             print("Epoch [{}/{}]".format(epoch + 1, num_epochs), end="\t")
             print("fid: {:.2f}".format(fid_score), end="\t")
             print("best fid: {:.2f}".format(best_fid_score))
-            logger.print_progress()
+            logger.print_progress(log_image, fid_score)
             logger.reset()
 
 if __name__ == "__main__":
+    wandb.init(project="nlp2022", name="train_attr_test", entity="janice9902")
     cfg = get_default_config()
     cfg.merge_from_file("./cfg/cub_dfgan.yaml")
     

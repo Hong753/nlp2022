@@ -1,6 +1,6 @@
 DATA:
     dataset_name: "CUB_200_2011"
-    data_dir: "/home/hong/datasets"
+    data_dir: "./data"
     img_size: 128 # can change to lower resolution (must be 2 ** int)
     img_channels: 3
     
@@ -14,9 +14,9 @@ MODEL:
     channel_base: 32
 
 TRAINING:
-    device: 0
-    batch_size: 64
-    num_workers: 4
+    device: 1
+    batch_size: 128
+    num_workers: 8
     G_lr: 0.0001
     D_lr: 0.0004
     num_epochs: 1000
